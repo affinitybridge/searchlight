@@ -2,24 +2,13 @@
 // $Id$
 
 /**
- * Implementation of hook_views_query_alter().
- * Provides backwards-compatibility events for Views 2.x.
- */
-function searchlight_views_query_alter(&$view, &$query) {
-  if (views_api_version() == '2.0' && !empty($query->searchlight)) {
-    $query->build($view);
-    $query->execute($view);
-  }
-}
-
-/**
  * Implementation of hook_views_plugins().
  */
 function searchlight_views_plugins() {
   return array(
     'query' => array(
       'searchlight' => array(
-        'file' => (views_api_version() == '2.0') ? 'searchlight_plugin_query_v2.inc' : 'searchlight_plugin_query_v3.inc',
+        'file' => 'searchlight_plugin_query.inc',
         'path' => drupal_get_path('module', 'searchlight') . '/views',
         'title' => t('Searchlight'),
         'help' => t('Searchlight query plugin.'),
