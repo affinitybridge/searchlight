@@ -236,62 +236,75 @@ function searchlight_views_default_views() {
     $view->base_table = 'node';
     $view->api_version = '3.0-alpha1';
     $handler = $view->new_display('default', 'Default', 'default');
+    $handler->display->display_options['access']['type'] = 'none';
+    $handler->display->display_options['cache']['type'] = 'none';
+    $handler->display->display_options['query']['type'] = 'views_query';
+    $handler->display->display_options['exposed_form']['type'] = 'basic';
+    $handler->display->display_options['pager']['type'] = 'full';
+    $handler->display->display_options['style_plugin'] = 'default';
+    $handler->display->display_options['row_plugin'] = 'fields';
     foreach (taxonomy_get_vocabularies() as $vocab) {
       $identifier = !empty($vocab->module) && $vocab->module !== 'taxonomy' ? $vocab->module : $vocab->vid;
       $identifier = strtr($identifier, ' -:', '___');
 
       /* Display: Vocabulary */
       $handler = $view->new_display('searchlight_multivalue', $vocab->name, 'searchlight_multivalue_'. $identifier);
-      $handler->override_option('arguments', array());
-      $handler->override_option('relationships', array());
-      $handler->override_option('sorts', array());
-      $handler->override_option('fields', array(
-        'nid' => array(
-          'id' => 'nid',
-          'table' => 'node',
-          'field' => 'nid',
-          'relationship' => 'none',
-        ),
-        'name' => array(
-          'id' => 'name',
-          'table' => 'term_data',
-          'field' => 'name',
-          'relationship' => 'none',
-          'label' => $vocab->name,
-        ),
-      ));
+      $handler->display->display_options['pager']['type'] = 'some';
+      $handler->display->display_options['defaults']['relationships'] = FALSE;
+      $handler->display->display_options['defaults']['fields'] = FALSE;
+      /* Field: Node: Nid */
+      $handler->display->display_options['fields']['nid']['id'] = 'nid';
+      $handler->display->display_options['fields']['nid']['table'] = 'node';
+      $handler->display->display_options['fields']['nid']['field'] = 'nid';
+      $handler->display->display_options['fields']['nid']['label'] = '';
+      $handler->display->display_options['fields']['nid']['alter']['alter_text'] = 0;
+      $handler->display->display_options['fields']['nid']['alter']['make_link'] = 0;
+      $handler->display->display_options['fields']['nid']['alter']['trim'] = 0;
+      $handler->display->display_options['fields']['nid']['alter']['word_boundary'] = 1;
+      $handler->display->display_options['fields']['nid']['alter']['ellipsis'] = 1;
+      $handler->display->display_options['fields']['nid']['alter']['strip_tags'] = 0;
+      $handler->display->display_options['fields']['nid']['alter']['html'] = 0;
+      $handler->display->display_options['fields']['nid']['link_to_node'] = 0;
+      /* Field: Taxonomy: Term */
+      $handler->display->display_options['fields']['name']['id'] = 'name';
+      $handler->display->display_options['fields']['name']['table'] = 'term_data';
+      $handler->display->display_options['fields']['name']['field'] = 'name';
+      $handler->display->display_options['fields']['name']['label'] = $vocab->name;
+      $handler->display->display_options['defaults']['sorts'] = FALSE;
+      $handler->display->display_options['defaults']['arguments'] = FALSE;
+      $handler->display->display_options['defaults']['filters'] = FALSE;
 
       // If Views can handle the Taxonomy vocab module field for supporting
       // exportable vocabularies, use it.
       $data = views_fetch_data('vocabulary');
       if (isset($data['module']) && !is_numeric($identifier)) {
-        $handler->override_option('filters', array(
+        $handler->display->display_options['filters'] = array(
           'module' => array(
             'id' => 'module',
             'table' => 'vocabulary',
             'field' => 'module',
             'value' => array($vocab->module => $vocab->module),
           ),
-        ));
+        );
       }
       else {
-        $handler->override_option('filters', array(
+        $handler->display->display_options['filters'] = array(
           'vid' => array(
             'id' => 'vid',
             'table' => 'term_data',
             'field' => 'vid',
             'value' => array($vocab->vid => $vocab->vid),
           ),
-        ));
+        );
       }
-      $handler->override_option('searchlight_multivalue', array(
+      $handler->display->display_options['searchlight_multivalue'] = array(
         'field' => 'term_data_tid',
         'label_field' => 'term_data_name',
         'override' => array(
           'name' => 'term_data_tid_'. $identifier,
           'label' => $vocab->name,
         ),
-      ));
+      );
     }
     $views[$view->name] = $view;
   }

@@ -67,7 +67,8 @@ class SearchlightDatasource {
         'id' => $this->base_field,
         'table' => $this->base_table,
         'field' => $this->base_field,
-        'relationship' => 'none'
+        'relationship' => 'none',
+        'link_to_node' => 0,
       );
     }
     foreach ($this->getFields() as $name => $field) {
