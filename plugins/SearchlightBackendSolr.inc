@@ -426,6 +426,7 @@ class SearchlightBackendSolr extends SearchlightBackend {
           }
 
           $this->queryFresh($view->query);
+          $view->build();
         }
         // MVA view:
         // - add an additional WHERE condition against items retrieved by the datasource view.
@@ -441,13 +442,18 @@ class SearchlightBackendSolr extends SearchlightBackend {
             $view->pager->query();
           }
 
+          // Build before adding the where clause because building resets the query object.
+          $view->build();
           $ids = implode(',', array_keys($items['datasource']));
           $view->query->add_where(0, "{$view->base_table}.{$view->base_field} IN ({$ids})");
+          // Regenerate build_info to reflect the newly added where clause.
+          $view->build_info['query'] = $view->query->query();
+          $view->build_info['count_query'] = $view->query->query(TRUE);
+          $view->build_info['query_args'] = $view->query->get_where_args();
         }
         else {
           continue;
         }
-        $view->build();
 
         // Re-key the render & raw items by base field ID.
         $items[$name] = $raw_items[$name] = array();
