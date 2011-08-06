@@ -27,8 +27,45 @@
   <requestDispatcher handleSelect="true" >
     <requestParsers enableRemoteStreaming="false" multipartUploadLimitInKB="2048" />
   </requestDispatcher>
+
+   <!-- The spell check component can return a list of alternative spelling
+  suggestions.  -->
+  <searchComponent name="spellcheck" class="solr.SpellCheckComponent">
+
+    <str name="queryAnalyzerFieldType">textSpell</str>
+
+    <lst name="spellchecker">
+      <str name="name">default</str>
+      <str name="field">spell</str>
+      <str name="spellcheckIndexDir">./spellchecker1</str>
+      <str name="buildOnOptimize">true</str>
+    </lst>
+    <lst name="spellchecker">
+      <str name="name">jarowinkler</str>
+      <str name="field">spell</str>
+      <!-- Use a different Distance Measure -->
+      <str name="distanceMeasure">org.apache.lucene.search.spell.JaroWinklerDistance</str>
+      <str name="spellcheckIndexDir">./spellchecker2</str>
+      <str name="buildOnOptimize">true</str>
+    </lst>
+
+  </searchComponent>
   
-  <requestHandler name="standard" class="solr.StandardRequestHandler" default="true" />
+  <queryConverter name="queryConverter" class="solr.SpellingQueryConverter"/>
+
+  <requestHandler name="standard" class="solr.StandardRequestHandler" default="true">
+    <lst name="defaults">
+      <str name="spellcheck"><?php print $settings['spell_suggest'] ? "true" : "false"; ?></str>
+    <!-- Defaults for the spell checker when used -->
+      <str name="spellcheck.onlyMorePopular">true</str>
+      <str name="spellcheck.extendedResults">false</str>
+      <!--  The number of suggestions to return -->
+      <str name="spellcheck.count">1</str>
+    </lst>
+    <arr name="last-components">
+      <str>spellcheck</str>
+    </arr>
+   </requestHandler>
   <requestHandler name="/update" class="solr.XmlUpdateRequestHandler" />
   <requestHandler name="/admin/" class="org.apache.solr.handler.admin.AdminHandlers" />
       

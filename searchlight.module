@@ -155,13 +155,25 @@ function searchlight_block($op = 'list', $delta = 0, $edit = array()) {
     $list = array();
     foreach (searchlight_environment_load() as $environment) {
       $list['facets_'. $environment->name] = array('info' => t('@name: Search facets', array('@name' => $environment->name)));
+      $list['didyoumean_'. $environment->name] = array('info' => t('@name: Did you mean', array('@name' => $environment->name)));
     }
+
     return $list;
   }
   else if ($op === 'view' && strpos($delta, '_') !== FALSE) {
     list($delta, $name) = explode('_', $delta, 2);
-    if (in_array($delta, array('facets'), TRUE) && $environment = searchlight_environment_load($name)) {
+    $environment = searchlight_environment_load($name);
+    if (in_array($delta, array('facets'), TRUE) && $environment) {
       return $environment->getBlock($delta);
+    }
+    if ($delta == 'didyoumean' && $environment) {
+      $results = searchlight_current_search($environment->view_display);
+      $query = $results[0];
+      $results = $results[1];
+      if (isset($results['suggestions']) && !empty($results['suggestions'])) {
+        return array('content' => t('You searched for @query. Did you mean !suggestion?', array('@query' => $query, '@suggestion' => '<em>'. $results['suggestions'][0] .'</em>')));
+      }
+      return array();
     }
   }
 }
@@ -238,7 +250,7 @@ function searchlight_theme() {
     ),
     'searchlight_solr_config' => array(
       'template' => 'searchlight-solr-config',
-      //'arguments' => array('datasource' => array()),
+      'arguments' => array('settings' => array()),
       'path' => drupal_get_path('module', 'searchlight') . '/theme',
       'file' => 'searchlight.theme.inc',
     ),
@@ -665,6 +677,35 @@ function searchlight_build_view($identifier) {
     return $view;
   }
   return FALSE;
+}
+
+/**
+ * Static store for the searches executed on the current page. Can either be
+ * used to store an executed search, or to retrieve a previously stored
+ * search. Based on a similar function in Search API module.
+ *
+ * @param environment
+ *  The name of the environment that we are storing/retrieving results for.
+ *
+ * @param $query
+ *   When storing an executed search, the query that was executed. NULL
+ *   otherwise.
+ * @param array $results
+ *   When storing an executed search, the returned results
+ *
+ * @return array
+ *   An array containing ($query, $results) as used in this function's parameters.
+ */
+function searchlight_current_search($environment = NULL, $query = NULL, array $results = array()) {
+  static $searches = array();
+  if (isset($query)) {
+    $searches[$environment] = array($query, $results);
+  }
+
+  if (isset($environment)) {
+    return isset($searches[$environment]) ? $searches[$environment] : NULL;
+  }
+  return $searches;
 }
 
 /**

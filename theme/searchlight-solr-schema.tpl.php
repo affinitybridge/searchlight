@@ -33,7 +33,7 @@
                 /> */ ?>
         <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="1" catenateAll="0" splitOnCaseChange="1"/>
         <filter class="solr.LowerCaseFilterFactory"/>
-        <?php /* <filter class="solr.SnowballPorterFilterFactory" language="English" protected="protwords.txt"/> */ ?>
+        <filter class="solr.SnowballPorterFilterFactory" language="English"/>
         <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
       </analyzer>
       <analyzer type="query">
@@ -47,7 +47,7 @@
                 /> */ ?>
         <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
         <filter class="solr.LowerCaseFilterFactory"/>
-        <?php /* <filter class="solr.SnowballPorterFilterFactory" language="English" protected="protwords.txt"/> */ ?>
+        <filter class="solr.SnowballPorterFilterFactory" language="English"/>
         <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
       </analyzer>
     </fieldType>
@@ -86,6 +86,12 @@
   <?php foreach($datasource['schema'] as $f): ?>
     <field name="<?php print $f['name'];?>"  type="<?php print $f['type'];?>" indexed="<?php print $f['indexed'];?>" stored="<?php print $f['stored'];?>" multiValued="<?php print $f['multiValued'];?>"/>
   <?php endforeach; ?>
+
+    <!-- Add spellchecker field - NOT INCLUDED IN ORIGINAL -->
+    <field name="spell" type="textSpell" indexed="true" stored="true" multiValued="true"/>
+    <copyField source="node_title" dest="spell"/>
+    <copyField source="_body" dest="spell"/>
+
  </fields>
  <uniqueKey><?php print $datasource['conf']['unique_key']; ?></uniqueKey>
 

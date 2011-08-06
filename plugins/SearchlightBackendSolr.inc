@@ -14,6 +14,7 @@ class SearchlightBackendSolr extends SearchlightBackend {
       'path' => '/solr',
       'jar_path' => '/usr/local/apache-solr-1.4.0/example',
       'item_limit' => 100,
+      'spell_suggest' => 0,
     );
   }
 
@@ -40,12 +41,24 @@ class SearchlightBackendSolr extends SearchlightBackend {
       '#default_value' => $this->settings['path'],
       '#size' => 60,
     );
+    $form['jar_path'] = array(
+      '#title' => t('Solr Jar path'),
+      '#type' => 'textfield',
+      '#default_value' => $this->settings['jar_path'],
+      '#size' => 60,
+    );
+    $form['spell_suggest'] = array(
+      '#title' => t('Enable Spelling Suggetions'),
+      '#type' => 'checkbox',
+      '#default_value' => $this->settings['spell_suggest'],
+    );
     $form['item_limit'] = array(
       '#title' => t('Items to index per job'),
       '#type' => 'select',
       '#default_value' => $this->settings['item_limit'],
       '#options' => array(
         0 => t('Unlimited'),
+        20 => 20,
         100 => 100,
         250 => 250,
         500 => 500,
@@ -91,18 +104,33 @@ class SearchlightBackendSolr extends SearchlightBackend {
       return FALSE;
     }
 
+
     foreach ($response->response->docs as $doc) {
       $ids[] = $doc->{$datasource->base_field};
     }
 
+    $return = FALSE;
     if (!empty($ids)) {
-      return array(
+      $return =  array(
         'result' => $ids, 
         'total' => $response->response->numFound,
         'raw' => $response,
       );
     }
-    return FALSE;
+    else {
+      // TODO: Figure out how to do this properly as this is gross and hackish
+      $query_arr = explode(' ', $query);
+      $keyword = trim($query_arr[0], '"');
+      $spellcheck = $response->spellcheck;
+      if (isset($spellcheck->suggestions->{$keyword}) && $spellcheck->suggestions->{$keyword}->numFound > 0) {
+        $return = array(
+          'result' => array(),
+          'total' => 0,
+          'suggestions' => $spellcheck->suggestions->{$keyword}->suggestion,
+        );
+      }
+    }
+    return $return;
   }
 
   /**
@@ -498,6 +526,7 @@ class SearchlightBackendSolr extends SearchlightBackend {
         foreach ($items['datasource'] as $id => $item) {
           $document = new Apache_Solr_Document();
           $content = array();
+
           foreach ($datasource->fields as $field) {
             switch ($field['usage']) {
               case 'content':
@@ -594,7 +623,7 @@ class SearchlightBackendSolr extends SearchlightBackend {
           $schema = $this->solrDatasourceConf($datasource);
           $files = array(
             'schema.xml' => theme('searchlight_solr_schema', $schema),
-            'solrconfig.xml' => theme('searchlight_solr_config'),
+            'solrconfig.xml' => theme('searchlight_solr_config', $this->settings),
           );
           $this->solrWriteFiles($core_path, $files);
         }
