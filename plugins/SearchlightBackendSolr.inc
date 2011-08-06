@@ -465,6 +465,14 @@ class SearchlightBackendSolr extends SearchlightBackend {
           foreach ($data as $row) {
             $row = (object) $row;
             $id = $row->{$view->base_field};
+            // The line below constitutes a major WTF that I haven't gotten to the bottom of.
+            // As with the taxonomy views, the way these were definied was causing the
+            // 'link_to_node' property of the nid field to default to TRUE, however in the
+            // case of the taxonomy views (in searchlight.views.inc) I was able to fix this,
+            // whereas I haven't been able to figure out how to fix it for the datasource
+            // view. In the meantime, we need to make sure the <a> tag is stripped off our
+            // id value.
+            $id = strip_tags($id);
             foreach ($row as $field_name => $value) {
               // Multivalue fields are passed as an array of values.
               // If we already have a value for this field, it must be multiple.
@@ -511,7 +519,7 @@ class SearchlightBackendSolr extends SearchlightBackend {
                 break;
               default:
                 $raw_item = $raw_items['datasource'][$id];
-                if (isset($raw_item->{$field['name']})) {
+                if (isset($raw_item[$field['name']])) {
                   if ($field['datatype'] == 'timestamp') {
                     $document->{$field['name']} = gmdate('Y-m-d\\TH:i:s\\Z', $raw_item[$field['name']]);
                   }
