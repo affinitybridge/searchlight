@@ -457,14 +457,28 @@ class SearchlightBackendSolr extends SearchlightBackend {
 
         // Re-key the render & raw items by base field ID.
         $items[$name] = $raw_items[$name] = array();
-        foreach ($view->render() as $row) {
-          $row = (object) $row;
-          $id = $row->{$view->base_field};
-          $items[$name][$id] = $row;
-        }
-        foreach ($view->result as $row) {
-          $id = $row->{$view->base_field};
-          $raw_items[$name][$id] = $row;
+        $results = array(
+          'items' => $view->render(),
+          'raw_items' => $view->result
+        );
+        foreach ($results as $key => $data) {
+          foreach ($data as $row) {
+            $row = (object) $row;
+            $id = $row->{$view->base_field};
+            foreach ($row as $field_name => $value) {
+              // Multivalue fields are passed as an array of values.
+              // If we already have a value for this field, it must be multiple.
+              if (isset(${$key}[$name][$id][$field_name]) && ${$key}[$name][$id][$field_name] !== $value) {
+                ${$key}[$name][$id][$field_name] = (array) ${$key}[$name][$id][$field_name];
+                ${$key}[$name][$id][$field_name][] = $value;
+              }
+              // Later row values for single-value fields can safely override
+              // earlier ones--they should be identical.
+              else {
+                ${$key}[$name][$id][$field_name] = $value;
+              }
+            }
+          }
         }
       }
 
@@ -479,19 +493,19 @@ class SearchlightBackendSolr extends SearchlightBackend {
           foreach ($datasource->fields as $field) {
             switch ($field['usage']) {
               case 'content':
-                $content[] = $this->apachesolr_clean_text($item->{$field['name']});
+                $content[] = $this->apachesolr_clean_text($item[$field['name']]);
                 break;
               case 'multivalue':
                 $mva_item = $raw_items[$field['name']][$id];
                 // Ideally we would use the handler to discover the MVA field
                 // alias. For now just do it by convention.
                 $alias = "{$field['table']}_{$field['field']}";
-                if (isset($mva_item->{$alias})) {
+                if (isset($mva_item[$alias])) {
                   if ($field['datatype'] == 'timestamp') {
-                    $document->{$field['name']} = gmdate('Y-m-d\\TH:i:s\\Z', $mva_item->{$alias});
+                    $document->{$field['name']} = gmdate('Y-m-d\\TH:i:s\\Z', $mva_item[$alias]);
                   }
                   else {
-                    $document->{$field['name']} = $mva_item->{$alias};
+                    $document->{$field['name']} = $mva_item[$alias];
                   }
                 }
                 break;
@@ -499,10 +513,10 @@ class SearchlightBackendSolr extends SearchlightBackend {
                 $raw_item = $raw_items['datasource'][$id];
                 if (isset($raw_item->{$field['name']})) {
                   if ($field['datatype'] == 'timestamp') {
-                    $document->{$field['name']} = gmdate('Y-m-d\\TH:i:s\\Z', $raw_item->{$field['name']});
+                    $document->{$field['name']} = gmdate('Y-m-d\\TH:i:s\\Z', $raw_item[$field['name']]);
                   }
                   else {
-                    $document->{$field['name']} = $raw_item->{$field['name']};
+                    $document->{$field['name']} = $raw_item[$field['name']];
                   }
                 }
                 break;
