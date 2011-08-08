@@ -83,6 +83,7 @@ class SearchlightBackendSolr extends SearchlightBackend {
    * Override of executeQuery().
    */
   function executeQuery(&$client, $datasource, $query = '') {
+    $original_query = $query;
     $query = $this->solrPrepareQuery($client, $datasource, $query);
     $offset = $client->searchlightOffset;
     $limit = $client->searchlightLimit;
@@ -117,17 +118,20 @@ class SearchlightBackendSolr extends SearchlightBackend {
         'raw' => $response,
       );
     }
-    else {
-      // TODO: Figure out how to do this properly as this is gross and hackish
-      $query_arr = explode(' ', $query);
-      $keyword = trim($query_arr[0], '"');
-      $spellcheck = $response->spellcheck;
-      if (isset($spellcheck->suggestions->{$keyword}) && $spellcheck->suggestions->{$keyword}->numFound > 0) {
-        $return = array(
-          'result' => array(),
-          'total' => 0,
-          'suggestions' => $spellcheck->suggestions->{$keyword}->suggestion,
-        );
+    // Get spellchecker suggestions.
+    if (isset($response->spellcheck->suggestions) && $response->spellcheck->suggestions) {
+      $suggestions = get_object_vars($response->spellcheck->suggestions);
+      if ($suggestions) {
+        // Get the original query and replace words.
+
+        foreach ($suggestions as $word => $value) {
+          $replacements[$word] = $value->suggestion[0];
+        }
+        $new_query = strtr($original_query, $replacements);
+        if ($original_query != $new_query) {
+          // Show only if suggestion is different than current query.
+          $return['suggestions'] = array($new_query);
+        }
       }
     }
     return $return;

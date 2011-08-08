@@ -163,18 +163,10 @@ function searchlight_block($op = 'list', $delta = 0, $edit = array()) {
   else if ($op === 'view' && strpos($delta, '_') !== FALSE) {
     list($delta, $name) = explode('_', $delta, 2);
     $environment = searchlight_environment_load($name);
-    if (in_array($delta, array('facets'), TRUE) && $environment) {
+    if (in_array($delta, array('facets', 'didyoumean'), TRUE) && $environment) {
       return $environment->getBlock($delta);
     }
-    if ($delta == 'didyoumean' && $environment) {
-      $results = searchlight_current_search($environment->view_display);
-      $query = $results[0];
-      $results = $results[1];
-      if (isset($results['suggestions']) && !empty($results['suggestions'])) {
-        return array('content' => t('You searched for @query. Did you mean !suggestion?', array('@query' => $query, '@suggestion' => '<em>'. $results['suggestions'][0] .'</em>')));
-      }
-      return array();
-    }
+    return array();
   }
 }
 
@@ -274,6 +266,11 @@ function searchlight_theme() {
       'file' => 'searchlight.theme.inc',
     ),
     'searchlight_facet_active' => array(
+      'path' => drupal_get_path('module', 'searchlight') . '/theme',
+      'file' => 'searchlight.theme.inc',
+    ),
+    'searchlight_spelling_suggestions' => array(
+      'arguments' => array('suggestions' => array()),
       'path' => drupal_get_path('module', 'searchlight') . '/theme',
       'file' => 'searchlight.theme.inc',
     ),
@@ -706,6 +703,20 @@ function searchlight_current_search($environment = NULL, $query = NULL, array $r
     return isset($searches[$environment]) ? $searches[$environment] : NULL;
   }
   return $searches;
+}
+
+function searchlight_spelling_suggestions($environment_name) {
+  $results = searchlight_current_search($environment_name);
+  $query = $results[0];
+  $results = $results[1];
+  if (isset($results['suggestions']) && !empty($results['suggestions'])) {
+    $path = $_GET['q'];
+    foreach ($results['suggestions'] as $suggestion) {
+      $suggestions[] = l($suggestion, $path, array('query' => array('search' => $suggestion)));
+    }
+    return t('You searched for @query.', array('@query' => $query)) . theme('searchlight_spelling_suggestions', $suggestions);
+  }
+  return '';
 }
 
 /**

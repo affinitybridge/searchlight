@@ -139,6 +139,12 @@ class SearchlightEnvironment {
         );
       }
     }
+    if ($delta == 'didyoumean') {
+      $output = searchlight_spelling_suggestions($this->view_display);
+      if (!empty($output)) {
+        return array('content' => $output);
+      }
+    }
     return array();
   }
 

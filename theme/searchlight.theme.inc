@@ -102,6 +102,19 @@ function theme_searchlight_facet_active($field, $item) {
 }
 
 /**
+ * Default theme function for spelling suggestions.
+ */
+function theme_searchlight_spelling_suggestions($suggestions) {
+  $output = '<div class="spelling-suggestions">';
+  $output .= '<dl class="form-item"><dt><strong>' . t('Did you mean') . '</strong></dt>';
+  foreach ($suggestions as $suggestion_link) {
+    $output .= '<dd>' . $suggestion_link . '</dd>';
+  }
+  $output .= '</dl></div>';
+  return $output;
+}
+
+/**
  * Generates the main datasource admin page.
  */
 function theme_searchlight_admin_list($form) {
