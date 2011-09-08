@@ -189,14 +189,14 @@ class SearchlightDatasource {
         foreach ($view->display as $display) {
           if ($display->display_plugin === 'searchlight_multivalue') {
             $view = views_get_view($view->name);
-            $view->set_display($display->id);
-            $multivalue = $view->execute_display();
+            $multivalue = $view->execute_display($display->id);
             $multivalues[$multivalue['name']] = $multivalue;
             $view->destroy();
           }
         }
       }
     }
+
     return $multivalues;
   }
 
