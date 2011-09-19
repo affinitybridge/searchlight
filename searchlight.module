@@ -693,10 +693,10 @@ function searchlight_build_view($identifier) {
  * @return array
  *   An array containing ($query, $results) as used in this function's parameters.
  */
-function searchlight_current_search($environment = NULL, $query = NULL, array $results = array()) {
+function searchlight_current_search($environment = NULL, $query = NULL, array $results = array(), SearchlightBackend $backend = NULL) {
   static $searches = array();
   if (isset($query)) {
-    $searches[$environment] = array($query, $results);
+    $searches[$environment] = array($query, $results, $backend);
   }
 
   if (isset($environment)) {
@@ -705,18 +705,33 @@ function searchlight_current_search($environment = NULL, $query = NULL, array $r
   return $searches;
 }
 
+/**
+ * Returns spellings suggestions if supported by the backend.
+ */
 function searchlight_spelling_suggestions($environment_name) {
-  $results = searchlight_current_search($environment_name);
-  $query = $results[0];
-  $results = $results[1];
-  if (isset($results['suggestions']) && !empty($results['suggestions'])) {
-    $path = $_GET['q'];
-    foreach ($results['suggestions'] as $suggestion) {
-      $suggestions[] = l($suggestion, $path, array('query' => array('search' => $suggestion)));
-    }
-    return t('You searched for @query.', array('@query' => $query)) . theme('searchlight_spelling_suggestions', $suggestions);
+  $search = searchlight_current_search($environment_name);
+  $query = array_shift($search);
+  $results = array_shift($search);
+  $backend = array_shift($search);
+  // Bail if our backend doesn't support spelling suggestions.
+  if (!$backend->supportsFeature('searchlight_spellcheck')) {
+    return;
   }
-  return '';
+  // Bail if we didn't get any spelling suggestions.
+  if (!isset($results['suggestions']) || empty($results['suggestions'])) {
+    return;
+  }
+  $show_iff_noresults = $backend->settings['spell_iff_noresults'];
+  // Don't show spelling suggestions if we have at least one result and only wish
+  // to provide suggestions where the search was unsuccessful.
+  if ($show_iff_noresults && isset($results['total']) && $results['total'] > 0) {
+    return;
+  }
+  $path = $_GET['q'];
+  foreach ($results['suggestions'] as $suggestion) {
+    $suggestions[] = l($suggestion, $path, array('query' => array('search' => $suggestion)));
+  }
+  return t('You searched for @query.', array('@query' => $query)) . theme('searchlight_spelling_suggestions', $suggestions);
 }
 
 /**

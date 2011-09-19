@@ -21,7 +21,7 @@ class SearchlightBackendSphinx extends SearchlightBackend {
         'ngram_len' => NULL,
         'ngram_chars' => NULL,
       ),
-    );
+    ) + parent::settingsDefault();
   }
 
   /**
@@ -88,7 +88,7 @@ class SearchlightBackendSphinx extends SearchlightBackend {
       '#type' => 'textfield',
       '#default_value' => $this->settings['index']['ngram_chars'],
     );
-    return $form;
+    return $form + parent::settingsForm();
   }
 
   /**

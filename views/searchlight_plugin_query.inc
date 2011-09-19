@@ -234,7 +234,7 @@ class searchlight_plugin_query extends views_plugin_query_default {
     // Main query execution.
     $this->search_result = $this->backend->executeQuery($this->client, $this->datasource, $this->search_query);
     $environment = searchlight_environment_active(NULL, $view->name, $view->current_display);
-    searchlight_current_search($environment->view_display, $this->search_query, $this->search_result);
+    searchlight_current_search($environment->view_display, $this->search_query, $this->search_result, $this->backend);
     // Build facets.
     $this->search_result_facets = $this->backend->facetBuild($this->client, $this->datasource, $this->search_query, $this->search_facets);
     if ($this->search_buildmode === 'search') {

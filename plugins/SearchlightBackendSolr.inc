@@ -14,15 +14,13 @@ class SearchlightBackendSolr extends SearchlightBackend {
       'path' => '/solr',
       'jar_path' => '/usr/local/apache-solr-1.4.0/example',
       'item_limit' => 100,
-      'spell_suggest' => 0,
-    );
+    ) + parent::settingsDefault();
   }
 
   /**
    * Override of settingsForm().
    */
   function settingsForm() {
-    $form = array();
     $form['host'] = array(
       '#title' => t('Solr host'),
       '#type' => 'textfield',
@@ -47,11 +45,6 @@ class SearchlightBackendSolr extends SearchlightBackend {
       '#default_value' => $this->settings['jar_path'],
       '#size' => 60,
     );
-    $form['spell_suggest'] = array(
-      '#title' => t('Enable Spelling Suggetions'),
-      '#type' => 'checkbox',
-      '#default_value' => $this->settings['spell_suggest'],
-    );
     $form['item_limit'] = array(
       '#title' => t('Items to index per job'),
       '#type' => 'select',
@@ -66,7 +59,17 @@ class SearchlightBackendSolr extends SearchlightBackend {
         1000 => 1000,
       ),
     );
-    return $form;
+    return $form + parent::settingsForm();
+  }
+
+  /**
+   * An array of features the backend supports.
+   */
+  public function supportsFeature($feature) {
+    $supported = drupal_map_assoc(array(
+      'searchlight_spellcheck',
+    ));
+    return isset($supported[$feature]);
   }
 
   /**

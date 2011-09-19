@@ -29,13 +29,36 @@ abstract class SearchlightBackend {
    * Array of default settings for this search backend.
    */
   function settingsDefault() {
-    return array();
+    return array(
+      'spell_suggest' => 0,
+      'spell_iff_noresults' => 0,
+    );
   }
 
   /**
    * System settings form for this search backend.
    */
   function settingsForm($values) {
+    $form = array();
+    if ($this->supportsFeature('searchlight_spellcheck')) {
+      $form['spell_suggest'] = array(
+        '#title' => t('Enable Spelling Suggetions'),
+        '#type' => 'checkbox',
+        '#default_value' => $this->settings['spell_suggest'],
+      );
+      $form['spell_iff_noresults'] = array(
+        '#title' => t('Only suggest spelling if no results'),
+        '#type' => 'checkbox',
+        '#default_value' => $this->settings['spell_iff_noresults'],
+      );
+    }
+    return $form;
+  }
+
+  /**
+   * An array of features the backend supports.
+   */
+  public function supportsFeature($feature) {
     return array();
   }
 
