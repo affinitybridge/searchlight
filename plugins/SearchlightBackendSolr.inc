@@ -103,6 +103,7 @@ class SearchlightBackendSolr extends SearchlightBackend {
     try { 
       $response = $client->search($query, $offset, $limit, $options);
     }
+
     catch (Exception $e) {
       drupal_set_message('Caught exception: '.  $e->getMessage(), 'error');
       return FALSE;
@@ -668,7 +669,7 @@ class SearchlightBackendSolr extends SearchlightBackend {
    * Assemble the query string.
    */
   function solrPrepareQuery(&$client, $datasource, $query) {
-    $query = empty($query) ? '[* TO *]' : '"'. $query .'"'; //  Is this really right?
+    $query = empty($query) ? '[* TO *]' : $query;
     if (isset($client->searchlightFilters)) {
       $query .= ' '. implode(' ', $client->searchlightFilters);
     }
