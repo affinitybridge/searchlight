@@ -103,7 +103,6 @@ class SearchlightBackendSolr extends SearchlightBackend {
     try { 
       $response = $client->search($query, $offset, $limit, $options);
     }
-
     catch (Exception $e) {
       drupal_set_message('Caught exception: '.  $e->getMessage(), 'error');
       return FALSE;
