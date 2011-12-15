@@ -27,7 +27,7 @@ class SearchlightBackendSphinx extends SearchlightBackend {
   /**
    * Override of settingsForm().
    */
-  function settingsForm() {
+  function settingsForm($values) {
     $form = array();
     $form['sql_sock'] = array(
       '#title' => t('DB sock'),
@@ -88,7 +88,7 @@ class SearchlightBackendSphinx extends SearchlightBackend {
       '#type' => 'textfield',
       '#default_value' => $this->settings['index']['ngram_chars'],
     );
-    return $form + parent::settingsForm();
+    return $form + parent::settingsForm($values);
   }
 
   /**

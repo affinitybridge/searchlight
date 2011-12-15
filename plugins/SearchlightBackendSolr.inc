@@ -20,7 +20,7 @@ class SearchlightBackendSolr extends SearchlightBackend {
   /**
    * Override of settingsForm().
    */
-  function settingsForm() {
+  function settingsForm($values) {
     $form['host'] = array(
       '#title' => t('Solr host'),
       '#type' => 'textfield',
@@ -59,7 +59,7 @@ class SearchlightBackendSolr extends SearchlightBackend {
         1000 => 1000,
       ),
     );
-    return $form + parent::settingsForm();
+    return $form + parent::settingsForm($values);
   }
 
   /**
