@@ -537,6 +537,14 @@ class SearchlightBackendSolr extends SearchlightBackend {
           foreach ($datasource->fields as $field) {
             switch ($field['usage']) {
               case 'content':
+                if (is_array($item[$field['name']])) {
+                  // Sometimes it happens that a multivalue field finds its way
+                  // in here so we need to make sure the vales get imploded to
+                  // a string.
+                  // TODO: Find out why / how this happens and deal with it
+                  // properly.
+                  $item[$field['name']] = implode(', ', $item[$field['name']]);
+                }
                 $content[] = $this->apachesolr_clean_text($item[$field['name']]);
                 break;
               case 'multivalue':
@@ -570,17 +578,21 @@ class SearchlightBackendSolr extends SearchlightBackend {
           $document->_body = implode(' ', $content);
           $documents[] = $document;
         }
+        try {
+          $solr->addDocuments($documents);
+          $solr->commit();
+          // $solr->optimize(); //merges multiple segments into one
 
-        $solr->addDocuments($documents);
-        $solr->commit();
-        // $solr->optimize(); //merges multiple segments into one
+          $args = $ids;
+          array_unshift($args, $datasource->base_table);
+          db_query("UPDATE {searchlight_search} SET status = 1 WHERE type ='%s'
+                    AND id IN (". rtrim(str_repeat('%d,', count($ids)), ',') .")", $args);
 
-        $args = $ids;
-        array_unshift($args, $datasource->base_table);
-        db_query("UPDATE {searchlight_search} SET status = 1 WHERE type ='%s'
-                  AND id IN (". rtrim(str_repeat('%d,', count($ids)), ',') .")", $args);
-
-        drush_log(dt('@datasource: Indexing completed for @count items.', array('@datasource' => $datasource->name, '@count' => count($ids))), 'success');
+          drush_log(dt('@datasource: Indexing completed for @count items.', array('@datasource' => $datasource->name, '@count' => count($ids))), 'success');
+        }
+        catch(Exception $e) {
+          drush_log(dt('Error adding documents to the solr index: @message', array('@message' => $e->getMessage())), 'error');
+        }
       }
       else {
         drush_log(dt('@datasource: Nothing to index.', array('@datasource' => $datasource->name)), 'success');
