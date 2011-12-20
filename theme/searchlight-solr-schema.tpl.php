@@ -89,7 +89,6 @@
 
     <!-- Add spellchecker field - NOT INCLUDED IN ORIGINAL -->
     <field name="spell" type="textSpell" indexed="true" stored="true" multiValued="true"/>
-    <copyField source="node_title" dest="spell"/>
     <copyField source="_body" dest="spell"/>
 
  </fields>
